@@ -1,0 +1,77 @@
+import numpy as np
+import pickle
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.metrics import r2_score
+
+
+def save_modelto_db(model, model_name, collection):
+    pickle_model = pickle.dumps(model)
+    collection.insert_one({'model': pickle_model, 'model_name': model_name})
+
+
+def read_model_from_db(model_name, collection):
+    model = collection.find_one({'model_name': model_name})
+    return pickle.loads(model['model'])
+
+
+def knn_regression_evaluation(df, collection, k=5):
+    ev_results = []
+    X = np.array(df.index, dtype='datetime64').reshape(-1, 1)
+    collection.drop()
+    for c in df.columns:
+        y = df.loc[:, c]
+        model = KNeighborsRegressor(n_neighbors=k)
+        model.fit(X, y)
+        ypred = model.fit(X, y).predict(X)
+        save_modelto_db(model, c, collection)
+        ev_results.append({'column': c, 'rsquared': r2_score(y, ypred)})
+
+    return ev_results
+
+
+def decision_tree_regression_evaluation(df, collection):
+    ev_results = []
+    X = np.array(df.index, dtype='datetime64').reshape(-1, 1)
+    collection.drop()
+    for c in df.columns:
+        y = df.loc[:, c]
+        model = DecisionTreeRegressor()
+        model.fit(X, y)
+        ypred = model.fit(X, y).predict(X)
+        save_modelto_db(model, c, collection)
+        ev_results.append({'column': c, 'rsquared': r2_score(y, ypred)})
+
+    return ev_results
+
+
+def random_forest_regression_evaluation(df, collection):
+    ev_results = []
+    X = np.array(df.index, dtype='datetime64').reshape(-1, 1)
+    collection.drop()
+    for c in df.columns:
+        y = df.loc[:, c]
+        model = RandomForestRegressor()
+        model.fit(X, y)
+        ypred = model.fit(X, y).predict(X)
+        save_modelto_db(model, c, collection)
+        ev_results.append({'column': c, 'rsquared': r2_score(y, ypred)})
+
+    return ev_results
+
+
+def adaboost_regression_evaluation(df, collection):
+    ev_results = []
+    X = np.array(df.index, dtype='datetime64').reshape(-1, 1)
+    collection.drop()
+    for c in df.columns:
+        y = df.loc[:, c]
+        model = AdaBoostRegressor()
+        model.fit(X, y)
+        ypred = model.fit(X, y).predict(X)
+        save_modelto_db(model, c, collection)
+        ev_results.append({'column': c, 'rsquared': r2_score(y, ypred)})
+
+    return ev_results
